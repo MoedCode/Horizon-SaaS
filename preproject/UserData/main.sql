@@ -1,0 +1,7 @@
+CREATE DATABASE UD_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'UD_admin'@'localhost' IDENTIFIED BY 'UD_PWD';
+
+GRANT ALL PRIVILEGES ON UD_db.* TO 'UD_admin'@'localhost';
+
+FLUSH PRIVILEGES;

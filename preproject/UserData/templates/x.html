@@ -1,0 +1,181 @@
+<!DOCTYPE html> <!-- Declares the document type and HTML version -->
+<html lang="en"> <!-- Start of HTML document with English language -->
+<head>
+  <meta charset="UTF-8" /> <!-- Character encoding -->
+  <title>User Profile Lookup</title> <!-- Title shown in browser tab -->
+
+  <!-- Internal CSS for styling -->
+  <style>
+    /* Basic layout and font */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f5f9;
+      display: flex;
+      justify-content: center;
+      padding-top: 5vh;
+    }
+
+    /* Card container */
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+      padding: 2rem;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    /* Wrapper for label + input */
+    .input-group {
+      margin-bottom: 1rem;
+    }
+
+    /* Label styling */
+    label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: bold;
+    }
+
+    /* Input field styling */
+    input {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    /* Submit button styling */
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 0.7rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 1rem;
+      width: 100%;
+    }
+
+    /* Button hover effect */
+    button:hover {
+      background: #0056b3;
+    }
+
+    /* Profile display section */
+    .profile {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    /* Profile image styling */
+    .profile img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+    }
+
+    /* Paragraph styling inside profile */
+    .profile p {
+      margin: 0.3rem 0;
+    }
+
+    /* Error message styling */
+    .error {
+      color: red;
+      margin-top: 1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Main container for the form and profile output -->
+  <div class="card">
+
+    <!-- User ID input -->
+    <div class="input-group">
+      <label for="userId">Enter User ID</label>
+      <input type="number" id="userId" placeholder="e.g. 1" />
+    </div>
+
+    <!-- Load Profile button -->
+    <button onclick="fetchUser()">Load Profile</button>
+
+    <!-- Error output area -->
+    <div id="error" class="error"></div>
+
+    <!-- Profile display area (initially hidden) -->
+    <div id="profile" class="profile" style="display: none;">
+      <img id="userImage" src="" alt="User Image" />
+      <p><strong>ID:</strong> <span id="userIdDisplay"></span></p>
+      <p><strong>Name:</strong> <span id="userName"></span></p>
+      <p><strong>Email:</strong> <span id="userEmail"></span></p>
+    </div>
+  </div>
+
+  <!-- JavaScript code to handle user fetching -->
+  <script>
+    async function fetchUser() {
+      // Get entered user ID value
+      const userId = document.getElementById("userId").value;
+
+      // Get references to the error and profile elements
+      const errorDiv = document.getElementById("error");
+      const profileDiv = document.getElementById("profile");
+
+      // Clear previous error and hide profile display
+      errorDiv.textContent = '';
+      profileDiv.style.display = 'none';
+
+      // If no ID is entered, show error
+      if (!userId) {
+        errorDiv.textContent = "Please enter a valid user ID.";
+        return;
+      }
+
+      try {
+        // === 1. Get user data from API ===
+        const res = await fetch("/ud/user/get/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: userId }) // Send user ID
+        });
+
+        // If the response is not OK (e.g. 400/404), throw error
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Failed to fetch user data.");
+        }
+
+        // Parse JSON and update profile fields
+        const data = await res.json();
+        document.getElementById("userIdDisplay").textContent = data.id;
+        document.getElementById("userName").textContent = data.name;
+        document.getElementById("userEmail").textContent = data.email;
+
+        // === 2. Get user image from separate image endpoint ===
+        const imageRes = await fetch(`/ud/user/${userId}/image`);
+        if (imageRes.ok) {
+          const blob = await imageRes.blob(); // Get binary image
+          const imgURL = URL.createObjectURL(blob); // Convert to usable URL
+          document.getElementById("userImage").src = imgURL;
+        } else {
+          // If no image, use a placeholder image
+          document.getElementById("userImage").src = "http://localhost:8000/ud/user/image/3";
+        }
+
+        // Show profile div now that data is ready
+        profileDiv.style.display = 'block';
+
+      } catch (err) {
+        // If anything fails, show error message
+        errorDiv.textContent = err.message;
+        profileDiv.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>
