@@ -34,9 +34,13 @@ class UserRegister(APIView):
     def get(self, request):
         return render(request, "register.html")
 class UserGetData(APIView):
-    def get(self, request, user_id=0, name=None):
-        # password = request.data.get("password", None)
 
+    def get(self, request):
+        print(f"\nuser Data URL: {request.build_absolute_uri()}\n")
+
+        # password = request.data.get("password", None)
+        user_id = request.GET.get("user_id")
+        name = request.GET.get("name")
         if (user_id):
             user = UserData.objects.filter(id=user_id).first()
         elif (name):
@@ -49,13 +53,12 @@ class UserGetData(APIView):
         del user.image
         user_serialized = UserDataSerializer(user).data
         return Response(user_serialized, S200)
+
 class UserImage(APIView):
-    """
-    GET /ud/user/<user_id>/image/
-    — Returns the raw image bytes for the given user,
-      or a 404 JSON error if not found.
-    """
-    def get(self, request, user_id):
+
+    def get(self, request):
+        user_id = request.GET.get("user_id")
+        print(f"\nuser image URL: {request.build_absolute_uri()}\n")
         # 1. Try to load the user or return a 404
         ''' all that
         user = UserData.objects.filter(id=user_id).first()
@@ -81,3 +84,6 @@ class UserImage(APIView):
 class  xPage(APIView):
     def get(self, request):
         return render(request, 'x.html')
+class  HeaderPage(APIView):
+    def get(self, request):
+        return render(request, 'header.html')

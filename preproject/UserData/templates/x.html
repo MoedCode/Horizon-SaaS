@@ -1,179 +1,125 @@
-<!DOCTYPE html> <!-- Declares the document type and HTML version -->
-<html lang="en"> <!-- Start of HTML document with English language -->
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" /> <!-- Character encoding -->
-  <title>User Profile Lookup</title> <!-- Title shown in browser tab -->
-
-  <!-- Internal CSS for styling -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Profile</title>
   <style>
-    /* Basic layout and font */
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f2f5f9;
-      display: flex;
-      justify-content: center;
-      padding-top: 5vh;
-    }
-
-    /* Card container */
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 3rem auto;
       padding: 2rem;
-      max-width: 400px;
-      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: #f9f9f9;
     }
-
-    /* Wrapper for label + input */
-    .input-group {
-      margin-bottom: 1rem;
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
     }
-
-    /* Label styling */
-    label {
-      display: block;
-      margin-bottom: 0.4rem;
-      font-weight: bold;
-    }
-
-    /* Input field styling */
     input {
-      width: 100%;
-      padding: 0.6rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      padding: 10px;
+      font-size: 16px;
+      width: 70%;
     }
-
-    /* Submit button styling */
     button {
-      background: #007bff;
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #007BFF;
       color: white;
       border: none;
-      padding: 0.7rem 1rem;
-      border-radius: 6px;
       cursor: pointer;
-      margin-top: 1rem;
-      width: 100%;
+      border-radius: 5px;
+      margin-left: 10px;
     }
-
-    /* Button hover effect */
-    button:hover {
-      background: #0056b3;
-    }
-
-    /* Profile display section */
     .profile {
       margin-top: 2rem;
-      text-align: center;
     }
-
-    /* Profile image styling */
-    .profile img {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 1rem;
+    img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 1rem;
     }
-
-    /* Paragraph styling inside profile */
-    .profile p {
-      margin: 0.3rem 0;
-    }
-
-    /* Error message styling */
     .error {
       color: red;
-      margin-top: 1rem;
-      text-align: center;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
-  <!-- Main container for the form and profile output -->
-  <div class="card">
+<!-- in index.html -->
+<div id="header"></div>
 
-    <!-- User ID input -->
-    <div class="input-group">
-      <label for="userId">Enter User ID</label>
-      <input type="number" id="userId" placeholder="e.g. 1" />
-    </div>
+<script>
+  fetch('http://localhost:8000/ud/user/header')
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById('header').innerHTML = data;
+    });
+</script>
 
-    <!-- Load Profile button -->
-    <button onclick="fetchUser()">Load Profile</button>
+  <h1>User Profile Lookup</h1>
 
-    <!-- Error output area -->
-    <div id="error" class="error"></div>
+  <!-- Input field to enter User ID -->
+  <input type="number" id="userIdInput" placeholder="Enter User ID" />
+  <button onclick="loadProfile()">Load Profile</button>
 
-    <!-- Profile display area (initially hidden) -->
-    <div id="profile" class="profile" style="display: none;">
-      <img id="userImage" src="" alt="User Image" />
-      <p><strong>ID:</strong> <span id="userIdDisplay"></span></p>
-      <p><strong>Name:</strong> <span id="userName"></span></p>
-      <p><strong>Email:</strong> <span id="userEmail"></span></p>
-    </div>
+  <div class="profile" id="profileSection" style="display:none;">
+    <p><strong>ID:</strong> <span id="uid"></span></p>
+    <p><strong>Name:</strong> <span id="name"></span></p>
+    <p><strong>Email:</strong> <span id="email"></span></p>
+    <div id="image-container"></div>
   </div>
 
-  <!-- JavaScript code to handle user fetching -->
+  <p class="error" id="errorMessage" style="display:none;"></p>
+
   <script>
-    async function fetchUser() {
-      // Get entered user ID value
-      const userId = document.getElementById("userId").value;
+    async function loadProfile() {
+      const userId = document.getElementById('userIdInput').value;
+      const errorEl = document.getElementById('errorMessage');
+      const profileEl = document.getElementById('profileSection');
+      const imgContainer = document.getElementById('image-container');
 
-      // Get references to the error and profile elements
-      const errorDiv = document.getElementById("error");
-      const profileDiv = document.getElementById("profile");
+      errorEl.style.display = 'none';
+      profileEl.style.display = 'none';
+      imgContainer.innerHTML = '';
 
-      // Clear previous error and hide profile display
-      errorDiv.textContent = '';
-      profileDiv.style.display = 'none';
-
-      // If no ID is entered, show error
       if (!userId) {
-        errorDiv.textContent = "Please enter a valid user ID.";
+        errorEl.textContent = "Please enter a user ID.";
+        errorEl.style.display = 'block';
         return;
       }
 
       try {
-        // === 1. Get user data from API ===
-        const res = await fetch("/ud/user/get/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: userId }) // Send user ID
-        });
+        // Fetch user data
 
-        // If the response is not OK (e.g. 400/404), throw error
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || "Failed to fetch user data.");
-        }
-
-        // Parse JSON and update profile fields
+        const res = await fetch(`/ud/user/data/?user_id=${userId}`);
+        if (!res.ok) throw new Error("User not found");
         const data = await res.json();
-        document.getElementById("userIdDisplay").textContent = data.id;
-        document.getElementById("userName").textContent = data.name;
-        document.getElementById("userEmail").textContent = data.email;
 
-        // === 2. Get user image from separate image endpoint ===
-        const imageRes = await fetch(`/ud/user/${userId}/image`);
-        if (imageRes.ok) {
-          const blob = await imageRes.blob(); // Get binary image
-          const imgURL = URL.createObjectURL(blob); // Convert to usable URL
-          document.getElementById("userImage").src = imgURL;
-        } else {
-          // If no image, use a placeholder image
-          document.getElementById("userImage").src = "http://localhost:8000/ud/user/image/3";
+        // Populate fields
+        document.getElementById('uid').textContent = data.id;
+        document.getElementById('name').textContent = data.name;
+        document.getElementById('email').textContent = data.email;
+
+        // Show profile section
+        profileEl.style.display = 'block';
+
+        // Fetch and display user image
+        const imgRes = await fetch(`/ud/user/image/?user_id=${userId}`);
+        if (imgRes.ok) {
+          const blob = await imgRes.blob();
+          const imgURL = URL.createObjectURL(blob);
+          const img = document.createElement('img');
+          img.src = imgURL;
+          img.alt = "User Image";
+          imgContainer.appendChild(img);
         }
-
-        // Show profile div now that data is ready
-        profileDiv.style.display = 'block';
-
       } catch (err) {
-        // If anything fails, show error message
-        errorDiv.textContent = err.message;
-        profileDiv.style.display = 'none';
+        errorEl.textContent = "Error: " + err.message;
+        errorEl.style.display = 'block';
       }
     }
   </script>
