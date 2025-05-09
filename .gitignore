@@ -1,8 +1,9 @@
 .vscode/
 .git/
 __pycach__/
+
 # Ignore Python virtual environment
-.venv/
+H-SaaS-env/
 
 # Byte-compiled / cache files
 __pycache__/

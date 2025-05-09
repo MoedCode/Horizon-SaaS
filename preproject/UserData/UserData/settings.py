@@ -90,7 +90,7 @@ DATABASES = {
         'USER':'UD_admin',
         'PASSWORD':'UD_PWD',
         'HOST':'localhost',
-        'PORT':'3306',
+        'PORT':'5005',
 
     }
 }
